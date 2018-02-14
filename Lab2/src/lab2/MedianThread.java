@@ -5,162 +5,151 @@
  */
 package lab2;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  *
  * @author ongajong
  */
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.PriorityQueue;
-import java.util.Scanner;
-
-
-
 public class MedianThread {
-    public static void main(String[] args) throws InterruptedException, FileNotFoundException  {
-        MedianThread medianThread = new MedianThread();
-        // TODO: read data from external file and store it in an array
-        String filePath = "/home/ongajong/Documents/input.txt";
-        int inputSize = 524288;
-        ArrayList<Integer> originalArray = medianThread.readExternalFile(filePath,inputSize);
+    static int N;
+    static ArrayList<Integer> dataList;
+    private static final String fileLocation = "/home/ongajong/Documents/input.txt";
+    public static void main(String[] args) throws InterruptedException, FileNotFoundException{
+        N = 1;
 
-        // define number of threads
-        int NumOfThread = 2048;
-//        int NumOfThread = Integer.parseInt(args[2]);
 
-        // TODO: partition the array list into N subArrays, where N is the number of threads
-        ArrayList<ArrayList<Integer>> subArrays = medianThread.partitioningArray(originalArray,inputSize,NumOfThread);
+        // For Command Line
+//         String fileLocation = args[0];
+//         N = Integer.valueOf(args[1]);
 
-        // TODO: start recording time
-        long startTime = System.currentTimeMillis();
+        Scanner inFile = new Scanner(new File(fileLocation));
 
-        // TODO: create N threads and assign subArrays to the threads so that each thread sorts
-        // its repective subarray. For example,
-        ArrayList<MedianMultiThread> threadArrayList = medianThread.createThreads(NumOfThread,subArrays);
+        dataList = new ArrayList<Integer>();
+        try {
+            while (inFile.hasNextInt()) {
+                dataList.add(inFile.nextInt());
+            }
+        } finally {
+            inFile.close();
+        }
 
-        // TODO: start each thread to execute your sorting algorithm defined under the run() method, for example,
-        for (MedianMultiThread thread : threadArrayList) {
+
+        // size of each sublist
+        int numCountPart = dataList.size() / N;
+
+        ArrayList<ArrayList<Integer>> listOfSublists = new ArrayList<>();
+
+        for (int i = 0; i < N; i++){
+            ArrayList<Integer> sublist = new ArrayList<>(dataList.subList(i*numCountPart, (i+1)*numCountPart) );
+            listOfSublists.add(sublist);
+        }
+
+//        System.out.println("List of unsorted subarrays");
+//        System.out.println(listOfSublists + "\n");
+
+        // start recording time
+        final long startTime = System.currentTimeMillis();
+
+        // We have a large number of threads. So, we create an ArrayList of threads.
+        ArrayList<MedianMultiThread> listOfThreads = new ArrayList<>();
+
+        // A list to store sorted lists
+        ArrayList<List<Integer>> sortedList = new ArrayList<>();
+
+
+        // create N threads and assign sub-ArrayLists to the threads
+        // so that each thread can sort its respective sub-arrayList.
+        for (int i = 0; i < N; i++){
+            MedianMultiThread thread = new MedianMultiThread(listOfSublists.get(i));
+            listOfThreads.add(thread);
             thread.start();
-        }
-
-        for (MedianMultiThread thread : threadArrayList) {
             thread.join();
+            sortedList.add(thread.getInternal());
         }
 
+        List<Integer> sortedFullArray = mergeSortedArrays(sortedList);
 
-        // TODO: use any merge algorithm to merge the sorted subarrays and store it to another array, e.g., sortedFullArray.
-        ArrayList<ArrayList<Integer>> sortedArrays = new ArrayList<>();
-        for (MedianMultiThread thread : threadArrayList) {
-            sortedArrays.add(thread.getInternal());
-        }
-        ArrayList<Integer> sortedFullArray = medianThread.mergeKSortedArray(sortedArrays);
+        double median = computeMedian(sortedFullArray);
+        // stop recording time and compute the elapsed time
+        final long endTime = System.currentTimeMillis();
+        long runningTime = endTime - startTime;
 
-        //TODO: get median from sortedFullArray
-        //e.g, computeMedian(sortedFullArray);
-        double output = computeMedian(sortedFullArray);
+        System.out.println("The Median value is: " + String.valueOf(median));
+        System.out.println("Running time is " + runningTime + " milliseconds\n");
 
-        // TODO: stop recording time and compute the elapsed time
-        long finalTime = System.currentTimeMillis();
-        long timeElapsed = finalTime - startTime;
-
-        // TODO: printout the final sorted array
-
-        // TODO: printout median
-        System.out.println("The Median value is ...");
-        System.out.println(output);
-        System.out.println("Running time is " + timeElapsed + " milliseconds\n");
-    }
-    
-    ArrayList<Integer> readExternalFile(String filePath, int inputSize) throws FileNotFoundException {
-        Scanner inputScanner = new Scanner(new File(filePath));
-        ArrayList<Integer> arrayOutput = new ArrayList<>(inputSize);
-
-        int i = 0;
-        while (inputScanner.hasNext()) {
-            arrayOutput.add(i, inputScanner.nextInt());
-            i++;
-        }
-
-        return arrayOutput;
     }
 
-    
+    // each thread in the input is already sorted
+    public static ArrayList<Integer> mergeSortedArrays(ArrayList<List<Integer>> sortedList) {
+        ArrayList<Integer> sortedFullArray = new ArrayList<>();
+        ArrayList<Integer> cacheArray = new ArrayList<>();
 
-    private ArrayList<ArrayList<Integer>> partitioningArray(ArrayList<Integer> originalArray, int inputSize, int numOfThread) {
-        int subArraySize = inputSize/numOfThread;
-        ArrayList<ArrayList<Integer>> outputArray = new ArrayList<>(numOfThread);
-
-        int startingIndex = 0;
-        int endingIndex = subArraySize - 1;
-        for (int i = 0; i < numOfThread; i++) {
-            ArrayList<Integer> splitArray = new ArrayList<>(originalArray.subList(startingIndex,endingIndex));
-            outputArray.add(i,splitArray);
-            startingIndex += subArraySize;
-            endingIndex += subArraySize;
+        for (List<Integer> l : sortedList){
+            cacheArray.add(l.get(0));
         }
-        return outputArray;
-    }
-    public static double computeMedian(ArrayList<Integer> inputArray) {
-        //TODO: implement your function that computes median of values of an array
-        int arraySize = inputArray.size();
-        int midpoint = arraySize / 2;
-        return inputArray.get(midpoint);
-    }
+        while (sortedFullArray.size() != dataList.size()){
+            int min = findMin(cacheArray);
+            sortedFullArray.add(min);
+            int index = cacheArray.indexOf(min);
+            cacheArray.remove(index);
 
-    
-
-    public static ArrayList<Integer> mergeKSortedArray(ArrayList<ArrayList<Integer>> arr) throws InterruptedException{
-        //taken from program creek (implementation is in array
-        //PriorityQueue is heap in Java
-        PriorityQueue<ArrayContainer> queue = new PriorityQueue<ArrayContainer>();
-        int total=0;
-
-        //add arrays to heap
-        for (int i = 0; i < arr.size(); i++) {
-            queue.add(new ArrayContainer(arr.get(i), 0));
-            total = total + arr.get(i).size();
-        }
-
-        int m=0;
-//        int result[] = new int[total];
-        ArrayList<Integer> result = new ArrayList<>(total);
-
-        //while heap is not empty
-        while(!queue.isEmpty()){
-            ArrayContainer ac = queue.poll();
-            result.add(m++,ac.arr.get(ac.index));
-//            result[m++]=ac.arr.get(ac.index);
-
-            if(ac.index < ac.arr.size()-1){
-                queue.add(new ArrayContainer(ac.arr, ac.index+1));
+            // update the appended value with the next smallest
+            List<Integer> sublist = sortedList.get(index);
+            if (sublist.size() != 1){
+                sublist.remove(0);
+                cacheArray.add(index, sublist.get(0));
+            }
+            // do not remove appended value if last element of sublist
+            else if (sublist.size() == 1){
+                cacheArray.add(index,999999);
             }
         }
 
-        return result;
+        return sortedFullArray;
     }
-    
-    public ArrayList<MedianMultiThread> createThreads(int numOfThreads, ArrayList<ArrayList<Integer>> subArrays) {
-        ArrayList<MedianMultiThread> threadArrayList = new ArrayList<>(numOfThreads);
-        for (int i = 0; i < numOfThreads; i++) {
-            MedianMultiThread thread = new MedianMultiThread(subArrays.get(i));
-            threadArrayList.add(thread);
+
+    public static int findMin(ArrayList<Integer> list){
+        int min = list.get(0);
+        for (int i : list){
+            min = min < i ? min : i;
         }
-        return threadArrayList;
+        return min;
     }
+
+    // computeMedian is called when we get the final sorted ArrayList
+    public static double computeMedian(List<Integer> inputArray) {
+        int size = inputArray.size();
+        // if the inputArray is even
+        if (size % 2 == 0){
+            double a = inputArray.get((size / 2) - 1);
+            double b = inputArray.get(size / 2);
+            double median = (a + b) / 2.0;
+            return median;
+        } else { // if the inputArray is odd
+            double median = inputArray.get((size-1) / 2);
+            return median;
+        }
+    }
+
 }
 
-// extend Thread
 class MedianMultiThread extends Thread {
     private ArrayList<Integer> list;
+    private ArrayList<Integer> inpArray;
 
     public ArrayList<Integer> getInternal() {
-        return list;
+        return inpArray;
     }
 
     MedianMultiThread(ArrayList<Integer> array) {
@@ -168,47 +157,49 @@ class MedianMultiThread extends Thread {
     }
 
     public void run() {
-        // called by object.start()
         mergeSort(list);
     }
 
-    public static void main(String[] args) {
-        ArrayList<Integer> input = new ArrayList<>(Arrays.asList(5,1,2,8,9,3,4,6,2,7,6,3,9,0));
-        MedianMultiThread medianMultiThread = new MedianMultiThread(input);
-        System.out.println("mergeSort: " + medianMultiThread.mergeSort(input));
+    public void mergeSort(ArrayList<Integer> array) {
+        int size = array.size();
+        this.inpArray = array;
+        doMergeSort(0, size-1);
     }
 
-    // TODO: implement merge sort here, recursive algorithm
-    private ArrayList<Integer> mergeSort(ArrayList<Integer> list) {
-        int n = list.size();
-        boolean swapped = true;
-        Integer temp;
-        while(swapped) {
-            swapped = false;
-            for (int i = 1; i< n; i++){
-                if (list.get(i-1)> list.get(i)){
-                    Collections.swap(list, i, i-1);
-                    swapped = true;
-                }
-            }
-            n--;  
+    public void doMergeSort(int lowerIndex, int higherIndex){
+        if (lowerIndex < higherIndex){
+            int middle = lowerIndex + (higherIndex - lowerIndex)/2;
+            doMergeSort(lowerIndex,middle);
+            doMergeSort(middle+1, higherIndex);
+            mergeParts(lowerIndex, middle, higherIndex);
         }
-        return list;
-    }
-    
-}
-//for k sorted Arrays
-class ArrayContainer implements Comparable<ArrayContainer> {
-    ArrayList<Integer> arr;
-    int index;
-
-    public ArrayContainer(ArrayList<Integer> arr, int index) {
-        this.arr = arr;
-        this.index = index;
     }
 
-    @Override
-    public int compareTo(ArrayContainer o) {
-        return this.arr.get(this.index) - o.arr.get(o.index);
+    public void mergeParts(int lowerIndex, int middle, int higherIndex){
+        ArrayList<Integer> mergedSortedArray = new ArrayList<>();
+
+        int i = lowerIndex;
+        int j = middle + 1;
+        int k = lowerIndex;
+        while (i <= middle && j <= higherIndex){
+            if (inpArray.get(i) <= inpArray.get(j)){
+                mergedSortedArray.add(inpArray.get(i));
+                i++;
+            }
+            else{
+                mergedSortedArray.add(inpArray.get(j));
+                j++;
+            }
+        }
+        while (i <= middle){
+            mergedSortedArray.add(inpArray.get(i));
+            i++;
+        }
+        int iter = 0;
+        while (iter < mergedSortedArray.size()){
+            inpArray.set(k, mergedSortedArray.get(iter++));
+            k++;
+        }
     }
+
 }

@@ -30,15 +30,11 @@ public class MeanThread {
         return threadArrayList;
     }
 
-    ArrayList<Integer> readExternalFile(String filePath, int inputSize) throws FileNotFoundException {
-        Scanner inputScanner = new Scanner(new File(filePath));
-
-        int i = 0;
-        
-        ArrayList<Integer> arrayOutput = new ArrayList<>(inputSize);
+    ArrayList<Integer> readExternalFile(String filePath) throws FileNotFoundException {
+        Scanner inputScanner = new Scanner(new File(filePath));        
+        ArrayList<Integer> arrayOutput = new ArrayList<>();
         while (inputScanner.hasNext()) {
-            arrayOutput.add(i,  inputScanner.nextInt());
-            i++;
+            arrayOutput.add(inputScanner.nextInt());
         }
 
         return arrayOutput;
@@ -74,7 +70,7 @@ public class MeanThread {
         MeanThread meanThread = new MeanThread();
         String filePath = "/home/ongajong/Documents/input.txt";
         int inputSize = 524288;
-        ArrayList<Integer> originalArray = meanThread.readExternalFile(filePath,inputSize);
+        ArrayList<Integer> originalArray = meanThread.readExternalFile(filePath);
 
         // define number of threads
         int NumOfThread = 2048;
@@ -88,9 +84,6 @@ public class MeanThread {
         // TODO: create N threads and assign subArrays to the threads so that each thread computes mean of
         // its repective subarray. For example,
         ArrayList<MeanMultiThread> threadArrayList = meanThread.createThreads(NumOfThread,subArrays);
-
-        //Tip: you can't create big number of threads in the above way. So, create an array list of threads.
-
         // TODO: start each thread to execute your computeMean() function defined under the run() method
         //so that the N mean values can be computed. for example,
         for (MeanMultiThread thread : threadArrayList) {
@@ -138,12 +131,19 @@ class MeanMultiThread extends Thread {
     }
 
     public double computeMean(ArrayList<Integer> list) {
-        double meanOutput = 0;
-        int meanLength = list.size();
-        for (double values : list) {
-            meanOutput += values;
+//        double meanOutput = 0;
+//        int meanLength = list.size();
+//        for (double values : list) {
+//            meanOutput += values;
+//        }
+//        return meanOutput/meanLength;
+        int size = list.size();
+        double sum = 0;
+        for (int i = 0; i< size;i++){
+            sum += list.get(i);
         }
-        return meanOutput/meanLength;
+        double sublistMean = sum/(double) size;
+        return sublistMean;
     }
     public void run() {
         // TODO: implement your actions here, e.g., computeMean(...)
