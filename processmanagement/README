@@ -1,0 +1,25 @@
+/* Programming Assignment 1
+* Author 1 : Laura Ong Jin Hua
+* ID : 1002464
+* Date : 09/03/2017 */
+HOW TO USE:
+1. Input current directory of project folder under currentDirectory in ProcessManagement.java; line 11.
+
+2. Input filepath of instruction file under instructionSet in ProcessManagement.java; line 13.
+
+3. Compile project by executing command "javac ProcessManagement.java" in terminal
+
+4. Run project by executing command "java ProcessManagement" in terminal
+
+-----------------------------------------------------------------
+The aim of the this assignment is to traverse a directed acyclic graph (DAG) in parallel, which nodes consists of processes. 
+
+We achieve this goal by making use of threads. 
+
+Outerloop (ProcessManagement Line 24) carries out function executeNodes. ExecuteNodes creates a temp list of threads, to remove when the task (node) has been completed. Once a node's parents has been completed, set it from ready to running. 
+
+A new class ProcessThread is used to allocate each thread. Provisos for cat, echo, grep and ls are to prevent any mistakes in reading to shell. 
+
+The nodes in the DAG are iterated through, and those with no dependencies are executed. While all the nodes have not been executed yet, the program keeps checking if nodes are runnable and not executed, and executes them. A node is only runnable once its parents are all executed. 
+
+Inputs and outputs are redirected if needed. Output is inherited from parent process
