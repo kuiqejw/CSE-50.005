@@ -82,7 +82,7 @@ public class ClientCP2 {
             System.out.println(firstResponse);
 
             // send a nonce
-            byte[] nonce = generateNonce();
+            byte[] nonce = OutSideFunction.nonceGenerator();
             if (firstResponse.contains("this is SecStore")) {
                 stringOut.println(Integer.toString(nonce.length));
                 byteOut.write(nonce);
@@ -95,7 +95,7 @@ public class ClientCP2 {
             String encryptedNonceLength = stringIn.readLine();
             System.out.println("encrypted Nonce length: " + encryptedNonceLength);
             byte[] encryptedNonce = new byte[Integer.parseInt(encryptedNonceLength)];
-            ServerWithoutSecurity.readByte(encryptedNonce, byteIn);
+            OutSideFunction.readByte(encryptedNonce, byteIn);
             System.out.println("Received encrypted nonce from server");
 
             // ask for certificate
@@ -115,7 +115,7 @@ public class ClientCP2 {
             stringOut.println("CLIENT>> Ready to get certificate");
             stringOut.flush();
             byte[] certByteArray = new byte[Integer.parseInt(certByteArrayLength)];
-            ServerWithoutSecurity.readByte(certByteArray, byteIn);
+            OutSideFunction.readByte(certByteArray, byteIn);
             System.out.println("Received certificate from server");
 
             // verifying signed certificate from server using CA public key
@@ -264,16 +264,6 @@ public class ClientCP2 {
             e.printStackTrace();
         }
     }
-private static void encrypt2(PrintWriter stringOut, PublicKey serverPublicKey, BufferedReader stringIn, OutputStream byteOut) throws Exception{
 
-}
-    private static byte[] generateNonce() throws NoSuchAlgorithmException {
-        // create secure random number generator
-        SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
-
-        // get 1024 random bytes
-        byte[] nonce = new byte[64];
-        secureRandom.nextBytes(nonce);
-        return nonce;
-    }
+   
 }

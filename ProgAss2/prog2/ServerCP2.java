@@ -81,7 +81,7 @@ public class ServerCP2 {
                             // retrieve nonce from client
                             String nonceLength = stringIn.readLine();
                             byte[] nonce = new byte[Integer.parseInt(nonceLength)];
-                            readByte1(nonce, byteIn);
+                            OutSideFunction.readByte(nonce, byteIn);
                             System.out.println("Received fresh nonce from client");
 
                             // load private key from .der
@@ -91,7 +91,7 @@ public class ServerCP2 {
                             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                             PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 
-// Create cipher object and initialize is as encrypt mode, use PRIVATE key.
+                            // Create cipher object and initialize is as encrypt mode, use PRIVATE key.
                             Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                             rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, privateKey);
 
@@ -136,7 +136,7 @@ public class ServerCP2 {
                             stringOut.flush();
 
                             byte[] encryptedAESKeyBytes = new byte[Integer.parseInt(encryptAESBytesLength)];
-                            ServerWithoutSecurity.readByte(encryptedAESKeyBytes, byteIn);
+                            OutSideFunction.readByte(encryptedAESKeyBytes, byteIn);
                             System.out.println("Received session key from client");
 
                             //get encrypted file from client
@@ -146,7 +146,7 @@ public class ServerCP2 {
                             stringOut.flush();
 
                             byte[] encryptedFileBytes = new byte[Integer.parseInt(encryptFileBytesLength)];
-                            readByte1(encryptedFileBytes, byteIn);
+                            OutSideFunction.readByte(encryptedFileBytes, byteIn);
                             //received encrypted file from client
 
                             //Use cipher object, initialize as decrypt mode
@@ -182,6 +182,8 @@ public class ServerCP2 {
                             stringOut.close();
                             stringIn.close();
                             connectionSocket.close();
+                            System.out.println("This thread should be terminated");
+                            executorService.shutdown();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -196,15 +198,6 @@ public class ServerCP2 {
     }
 
     
-private static void readByte1(byte[] byteArray, InputStream byteIn) throws Exception{
-        int offset = 0;
-        int numRead = 0;
-        while (offset < byteArray.length && (numRead = byteIn.read(byteArray, offset, byteArray.length - offset)) >= 0){
-            offset += numRead;
-        }
-        if (offset < byteArray.length) {
-            System.out.println("File reception incomplete!");
-        }
-}
+
     
 }

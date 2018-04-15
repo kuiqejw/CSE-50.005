@@ -74,7 +74,7 @@ public class ClientWithoutSecurity {
             System.out.println(firstResponse);
 
             // send a nonce
-            byte[] nonce = generateNonce();
+            byte[] nonce = OutSideFunction.nonceGenerator();
             if (firstResponse.contains("this is SecStore")) {
                 stringOut.println(Integer.toString(nonce.length));
                 byteOut.write(nonce);
@@ -87,7 +87,7 @@ public class ClientWithoutSecurity {
             String encryptedNonceLength = stringIn.readLine();
             System.out.println("encrypted Nonce length: " + encryptedNonceLength);
             byte[] encryptedNonce = new byte[Integer.parseInt(encryptedNonceLength)];
-            ServerWithoutSecurity.readByte(encryptedNonce, byteIn);
+            OutSideFunction.readByte(encryptedNonce, byteIn);
             System.out.println("Received encrypted nonce from server");
 
             // ask for certificate
@@ -107,7 +107,7 @@ public class ClientWithoutSecurity {
             stringOut.println("CLIENT>> Ready to get certificate");
             stringOut.flush();
             byte[] certByteArray = new byte[Integer.parseInt(certByteArrayLength)];
-            ServerWithoutSecurity.readByte(certByteArray, byteIn);
+            OutSideFunction.readByte(certByteArray, byteIn);
             System.out.println("Received certificate from server");
 
             // verifying signed certificate from server using CA public key
@@ -153,7 +153,7 @@ public class ClientWithoutSecurity {
             rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, serverPublicKey);
 
             // start file transfer
-            byte[] encryptedFile = ServerWithoutSecurity.encrypt(uploadFilePath, rsaCipherEncrypt);
+            byte[] encryptedFile = OutSideFunction.encrypt(uploadFilePath, rsaCipherEncrypt);
 
             // send encrypted file
             stringOut.println(filename);
@@ -178,13 +178,5 @@ public class ClientWithoutSecurity {
         }
     }
 
-    private static byte[] generateNonce() throws NoSuchAlgorithmException {
-        // create secure random number generator
-        SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
-
-        // get 1024 random bytes
-        byte[] nonce = new byte[64];
-        secureRandom.nextBytes(nonce);
-        return nonce;
-    }
+    
 }
