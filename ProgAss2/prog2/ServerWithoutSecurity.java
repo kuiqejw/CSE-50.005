@@ -44,7 +44,7 @@ public class ServerWithoutSecurity {
                     System.out.println("... expecting connection ...");
                     final Socket connectionSocket = welcomeSocket.accept();
                     System.out.println("... connection established...");
-
+                    
                     // create threads to handle multiple client uploads
                     Runnable task = new Runnable() {
                         @Override
@@ -68,6 +68,11 @@ public class ServerWithoutSecurity {
                                 String nonceLength = stringIn.readLine();
                                 byte[] nonce = new byte[Integer.parseInt(nonceLength)];
                                 OutSideFunction.readByte(nonce, byteIn);
+                                //TODO: Calculate message digest, using MD5 hash function
+                                MessageDigest md = MessageDigest.getInstance("MD5");
+                                byte[] digest = md.digest(nonce);
+                                System.out.println(nonce);
+                                System.out.println(digest);
                                 System.out.println("Received fresh nonce from client");
 
                                 // load private key from .der

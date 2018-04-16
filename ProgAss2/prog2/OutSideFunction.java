@@ -16,15 +16,22 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Arrays;
 import javax.crypto.Cipher;
+import javax.xml.bind.DatatypeConverter;
 
 /**
  *
  * @author ongajong
  */
 public class OutSideFunction {
+
     protected static byte[] encrypt(String fileName, Cipher rsaCipherEncrypt) throws Exception {
         Path filePath = Paths.get(fileName);
         byte[] fileData = Files.readAllBytes(filePath);
@@ -46,6 +53,7 @@ public class OutSideFunction {
 
         return encryptedFile;
     }
+
     protected static void decrypt(byte[] encryptedFile, Cipher rsaCipherDecrypt, String fileName) throws Exception {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         int count = 0;
@@ -67,6 +75,8 @@ public class OutSideFunction {
         fileOut.write(decryptedFile, 0, decryptedFile.length);
         System.out.println("File registered into system.");
     }
+
+    //Verifies that the number of bytes is complete
     protected static void readByte(byte[] byteArray, InputStream byteIn) throws Exception {
         int offset = 0;
         int numRead = 0;
@@ -77,6 +87,7 @@ public class OutSideFunction {
             System.out.println("File reception incomplete!");
         }
     }
+
     protected static void closeConnections(OutputStream byteOut, InputStream byteIn, PrintWriter stringOut, BufferedReader stringIn, Socket socket) throws IOException {
         byteOut.close();
         byteIn.close();
@@ -84,6 +95,7 @@ public class OutSideFunction {
         stringIn.close();
         socket.close();
     }
+
     protected static byte[] nonceGenerator() throws NoSuchAlgorithmException {
         // create secure random number generator
         SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
@@ -93,4 +105,19 @@ public class OutSideFunction {
         secureRandom.nextBytes(nonce);
         return nonce;
     }
+
+    protected static byte[] EncryptNonce(byte[] m, PrivateKey key, String hashAlgo) throws Exception {
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+
+        // hashing the nonce due to RSA limitations
+        MessageDigest md = MessageDigest.getInstance(hashAlgo);
+        byte[]digest = md.digest(m);
+
+//        System.out.println("Message digest (MD5): " + DatatypeConverter.printBase64Binary(digest));
+        
+        System.out.println("Client says digested nonce is : " + Arrays.toString(digest));
+        return cipher.doFinal(new String(digest).getBytes());
+    }
+
 }

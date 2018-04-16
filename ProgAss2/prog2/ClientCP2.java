@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -82,12 +83,17 @@ public class ClientCP2 {
             System.out.println(firstResponse);
 
             // send a nonce
-            byte[] nonce = OutSideFunction.nonceGenerator();
+            SecureRandom random = new SecureRandom();
+            BigInteger placeHolder = new BigInteger(130, random);
+            System.out.println("That integer you are having " + placeHolder);
+            byte[] nonce = placeHolder.toByteArray();
             if (firstResponse.contains("this is SecStore")) {
                 stringOut.println(Integer.toString(nonce.length));
                 byteOut.write(nonce);
                 byteOut.flush();
                 System.out.println("Sent to server a fresh nonce");
+            } else {
+                OutSideFunction.closeConnections(byteOut, byteIn, stringOut, stringIn, clientSocket);
             }
 
             //System.out.println(nonce);
@@ -145,125 +151,68 @@ public class ClientCP2 {
             } else {
                 System.out.println("Identity verification unsuccessful, closing all connections");
                 stringOut.println("CLIENT>> Bye!");
-                byteOut.close();
-                byteIn.close();
-                stringOut.close();
-                stringIn.close();
-                clientSocket.close();
+                OutSideFunction.closeConnections(byteOut, byteIn, stringOut, stringIn, clientSocket);
             }
 
             System.out.println("Sending file...");
             // initial time mark
             Long startTime = System.currentTimeMillis();
-            
-        // create cipher object and initialize is as encrypt mode, use PUBLIC key.
-        Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, serverPublicKey);
 
-        // generate AES key
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(128);
-        SecretKey aesKey = keyGen.generateKey();
+            // create cipher object and initialize is as encrypt mode, use PUBLIC key.
+            Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, serverPublicKey);
 
-        // convert secret key to byte array
-        byte[] aesKeyBytes = aesKey.getEncoded();
+            // generate AES key
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+            keyGen.init(128);
+            SecretKey aesKey = keyGen.generateKey();
 
-        // encrypt AES key
-        byte[] encryptedAESKeyBytes = rsaCipherEncrypt.doFinal(aesKeyBytes);
+            // convert secret key to byte array
+            byte[] aesKeyBytes = aesKey.getEncoded();
 
-        // create cipher object for file encryption
-        Cipher aesEnCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        aesEnCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+            // encrypt AES key
+            byte[] encryptedAESKeyBytes = rsaCipherEncrypt.doFinal(aesKeyBytes);
 
-        // get bytes of file needed for transfer
-        File file = new File(uploadFilePath);
-        byte[] fileBytes = new byte[(int) file.length()];
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-        bis.read(fileBytes, 0, fileBytes.length);
+            // create cipher object for file encryption
+            Cipher aesEnCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            aesEnCipher.init(Cipher.ENCRYPT_MODE, aesKey);
 
-        // encrypt file with AES key
-        byte[] encryptedFileBytes = aesEnCipher.doFinal(fileBytes);
+            // get bytes of file needed for transfer
+            File file = new File(uploadFilePath);
+            byte[] fileBytes = new byte[(int) file.length()];
+            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+            bis.read(fileBytes, 0, fileBytes.length);
 
-        // send encrypted AES session key
-        stringOut.println(encryptedAESKeyBytes.length);
-        stringOut.flush();
-        System.out.println(stringIn.readLine());
-        byteOut.write(encryptedAESKeyBytes, 0, encryptedAESKeyBytes.length);
-        byteOut.flush();
-        System.out.println("Sent to server encrypted session key");
+            // encrypt file with AES key
+            byte[] encryptedFileBytes = aesEnCipher.doFinal(fileBytes);
 
+            // send encrypted AES session key
+            stringOut.println(encryptedAESKeyBytes.length);
+            stringOut.flush();
+            System.out.println(stringIn.readLine());
+            byteOut.write(encryptedAESKeyBytes, 0, encryptedAESKeyBytes.length);
+            byteOut.flush();
+            System.out.println("Sent to server encrypted session key");
 
-        // upload encrypted file to server
-        stringOut.println(filename);
-        stringOut.println(encryptedFileBytes.length);
-        stringOut.flush();
-        System.out.println(stringIn.readLine());
-        byteOut.write(encryptedFileBytes, 0, encryptedFileBytes.length);
-        byteOut.flush();
-        System.out.println("Sent to server encrypted file");
-
-            // create cipher object and initialize is as encrypt mode, us
-            
-//            e PUBLIC key.
-//            Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-//            rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, serverPublicKey);
-//
-//            // generate AES key
-//            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-//            keyGen.init(128);
-//            SecretKey aesKey = keyGen.generateKey();
-//            // convert secret key to byte array
-//            byte[] aesKeyBytes = aesKey.getEncoded();
-//
-//            // encrypt AES key
-//            byte[] encryptAESKeyBytes = rsaCipherEncrypt.doFinal(aesKeyBytes);
-//
-//            // create cipher object for file encryption
-//            Cipher aesEnCipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-//            aesEnCipher.init(Cipher.ENCRYPT_MODE, aesKey);
-//
-//            // get bytes of file needed for transfer
-//            File file = new File(uploadFilePath);
-//            byte[] fileBytes = new byte[(int) file.length()];
-//            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-//            bis.read(fileBytes, 0, fileBytes.length);
-//
-//            // encrypt file with AES key
-//            byte[] encryptedFileBytes = aesEnCipher.doFinal(fileBytes);
-//
-//            // send encrypted AES session key
-//            stringOut.println(encryptAESKeyBytes.length);
-//            stringOut.flush();
-//            System.out.println(stringIn.readLine());
-//            byteOut.write(encryptAESKeyBytes, 0, encryptAESKeyBytes.length);
-//            byteOut.flush();
-//            System.out.println("Sent to server encrypted session key");
-//
-//            // start file transfer
-//            byte[] encryptedFile = ServerWithoutSecurity.encrypt(uploadFilePath, rsaCipherEncrypt);
-//
-//            // send encrypted file
-//            stringOut.println(filename);
-//            stringOut.println(encryptedFile.length);
-//            System.out.println(stringIn.readLine());
-//            byteOut.write(encryptedFile, 0, encryptedFile.length);
-//            byteOut.flush();
+            // upload encrypted file to server
+            stringOut.println(filename);
+            stringOut.println(encryptedFileBytes.length);
+            stringOut.flush();
+            System.out.println(stringIn.readLine());
+            byteOut.write(encryptedFileBytes, 0, encryptedFileBytes.length);
+            byteOut.flush();
+            System.out.println("Sent to server encrypted file");
 
             // confirmation of successful file upload
             System.out.println(stringIn.readLine());
 
             Long endTime = System.currentTimeMillis();
             System.out.println("Uploading time spent is: " + (endTime - startTime) + "ms");
-            byteOut.close();
-            byteIn.close();
-            stringOut.close();
-            stringIn.close();
-            clientSocket.close();
+            OutSideFunction.closeConnections(byteOut, byteIn, stringOut, stringIn, clientSocket);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-   
 }

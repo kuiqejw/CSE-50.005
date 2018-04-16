@@ -1,5 +1,6 @@
 package prog2;
 
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -10,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -74,12 +76,18 @@ public class ClientWithoutSecurity {
             System.out.println(firstResponse);
 
             // send a nonce
-            byte[] nonce = OutSideFunction.nonceGenerator();
+            // Generate nonce!
+            SecureRandom random = new SecureRandom();
+            BigInteger placeHolder = new BigInteger(130, random);
+            System.out.println("That integer you are having " + placeHolder);
+            byte[] nonce = placeHolder.toByteArray();
             if (firstResponse.contains("this is SecStore")) {
                 stringOut.println(Integer.toString(nonce.length));
                 byteOut.write(nonce);
                 byteOut.flush();
                 System.out.println("Sent to server a fresh nonce");
+            }else{
+                OutSideFunction.closeConnections(byteOut, byteIn, stringOut, stringIn, clientSocket);
             }
 
             System.out.println(nonce);
@@ -130,6 +138,7 @@ public class ClientWithoutSecurity {
             byte[] decryptedNonce = cipherDecrypt.doFinal(encryptedNonce);
 
             // handles connection after decrypting nonce.
+            System.out.println(new BigInteger(decryptedNonce));
             if (Arrays.equals(nonce, decryptedNonce)) {
                 System.out.println("Server's identity verified");
                 stringOut.println("CLIENT>> Ready to upload file!");
@@ -137,11 +146,7 @@ public class ClientWithoutSecurity {
             } else {
                 System.out.println("Identity verification unsuccessful, closing all connections");
                 stringOut.println("CLIENT>> Bye!");
-                byteOut.close();
-                byteIn.close();
-                stringOut.close();
-                stringIn.close();
-                clientSocket.close();
+                OutSideFunction.closeConnections(byteOut, byteIn, stringOut, stringIn, clientSocket);
             }
 
             System.out.println("Sending file...");
@@ -167,11 +172,7 @@ public class ClientWithoutSecurity {
 
             Long endTime = System.currentTimeMillis();
             System.out.println("Uploading time spent is: " + (endTime - startTime) + "ms");
-                byteOut.close();
-                byteIn.close();
-                stringOut.close();
-                stringIn.close();
-                clientSocket.close();
+                OutSideFunction.closeConnections(byteOut, byteIn, stringOut, stringIn, clientSocket);
 
         } catch (Exception e) {
             e.printStackTrace();
