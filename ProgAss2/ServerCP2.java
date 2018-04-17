@@ -65,6 +65,20 @@ public class ServerCP2 {
                     @Override
                     public void run() {
                         try {
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                executorService.execute(task);
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public void handshake(Socket connectionSocket) throws Exception{
+        
                             OutputStream byteOut = connectionSocket.getOutputStream();
                             InputStream byteIn = connectionSocket.getInputStream();
 
@@ -179,17 +193,6 @@ public class ServerCP2 {
                             System.out.println("This thread should be terminated");
                             executorService.shutdown();
                             System.exit(1);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                };
-                executorService.execute(task);
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }
