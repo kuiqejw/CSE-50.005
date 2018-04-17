@@ -38,7 +38,9 @@ public class ClientCP2 {
     private static final String CACertFile = "C:\\Users\\ongajong\\Documents\\50.005\\Prog2\\src\\prog2\\CA.crt.txt";
 
     public static void main(String[] args) {
-        Socket clientSocket;
+        Socket clientSocket = null;
+
+
         try {
 
             System.out.println("Establishing connection to server...");
@@ -51,20 +53,20 @@ public class ClientCP2 {
 
             PrintWriter stringOut = new PrintWriter(clientSocket.getOutputStream(), true);
             BufferedReader stringIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-               //Wait for server to respond
+//Wait for server to respond
             stringOut.println("CLIENT>> Hello SecStore, please prove your identity!");
             stringOut.flush();
             System.out.println("Sent to server: Hello SecStore, please prove your identity!");
-                // wait for server to respond
-            String helloSecStore = stringIn.readLine();
-            System.out.println(helloSecStore);
+// wait for server to respond
+            String firstResponse = stringIn.readLine();
+            System.out.println(firstResponse);
 
             // send a nonce
             SecureRandom random = new SecureRandom();
             BigInteger placeHolder = new BigInteger(130, random);
-//            System.out.println("That integer you are having " + placeHolder);
+            System.out.println("That integer you are having " + placeHolder);
             byte[] nonce = placeHolder.toByteArray();
-            if (helloSecStore.contains("this is SecStore")) {
+            if (firstResponse.contains("this is SecStore")) {
                 stringOut.println(Integer.toString(nonce.length));
                 byteOut.write(nonce);
                 byteOut.flush();
@@ -117,13 +119,14 @@ public class ClientCP2 {
             Cipher cipherDecrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipherDecrypt.init(Cipher.DECRYPT_MODE, serverPublicKey);
 
-           // decrypt nonce
+            // decrypt nonce
             byte[] decryptedNonce = cipherDecrypt.doFinal(encryptedNonce);
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(nonce);
             byte[] digest = md.digest();
+
             // handles connection after decrypting nonce.
-            if (Arrays.equals(digest,decryptedNonce)) {
+            if (Arrays.equals(digest, decryptedNonce)) {
                 System.out.println("Server's identity verified");
                 stringOut.println("CLIENT>> Ready to upload file!");
                 stringOut.flush();

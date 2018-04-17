@@ -65,6 +65,7 @@ public class ServerCP2 {
                     @Override
                     public void run() {
                         try {
+                            handshake(connectionSocket);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -77,7 +78,7 @@ public class ServerCP2 {
             e.printStackTrace();
         }
     }
-    public void handshake(Socket connectionSocket) throws Exception{
+    public static void handshake(Socket connectionSocket) throws Exception {
         
                             OutputStream byteOut = connectionSocket.getOutputStream();
                             InputStream byteIn = connectionSocket.getInputStream();
@@ -110,9 +111,11 @@ public class ServerCP2 {
                             Cipher rsaCipherEncrypt = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                             rsaCipherEncrypt.init(Cipher.ENCRYPT_MODE, privateKey);
 
+                            //hash nounce
                             MessageDigest md = MessageDigest.getInstance("MD5");
                             md.update(nonce);
                             byte[] digest = md.digest();
+
                             // encrypt nonce
                             byte[] encryptedNonce = rsaCipherEncrypt.doFinal(digest);
                             stringOut.println(Integer.toString(encryptedNonce.length));
@@ -187,8 +190,6 @@ public class ServerCP2 {
                             stringOut.println("SERVER>> Upload file successful!");
                             stringOut.flush();
 
-                            byteOut.close();
-                            System.out.println("");
                             OutSideFunction.closeConnections(byteOut, byteIn, stringOut, stringIn, connectionSocket);
                             System.out.println("This thread should be terminated");
                             executorService.shutdown();
