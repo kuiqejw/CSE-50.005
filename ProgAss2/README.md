@@ -53,8 +53,8 @@ the client. Since the nonce is different for every session, the malicious server
 
 
 ### Protocol Specifications
-![alt text](https://github.com/woshibiantai/NS-Programming-Assignment/blob/master/CP1.png "CP-1")
-![alt text](https://github.com/woshibiantai/NS-Programming-Assignment/blob/master/CP2.png "CP-2")
+![alt text](https://github.com/kuiqejw/CSE-50.005/blob/master/ProgAss2/CP1CP2.png "CP1 versus CP2")
+
 
 ### Bonus Functions
 #### File Types
